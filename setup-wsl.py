@@ -84,18 +84,59 @@ def fix_xrdp_config(username):
     """Исправляем startwm.sh для xRDP"""
     print("🔧 Исправляем /etc/xrdp/startwm.sh...")
     startwm_content = '''#!/bin/sh
-if [ -r /etc/X11/xinit/xinitrc ]; then
-  . /etc/X11/xinit/xinitrc
-else
-  startxfce4 &
-fi
-'''
+        if [ -r /etc/X11/xinit/xinitrc ]; then
+          . /etc/X11/xinit/xinitrc
+        else
+          startxfce4 &
+        fi
+        '''
     startwm_path = "/tmp/startwm.sh"
     Path(startwm_path).write_text(startwm_content, encoding='utf-8')
     run(["cp", startwm_path, "/etc/xrdp/startwm.sh"])
     run(["chmod", "+x", "/etc/xrdp/startwm.sh"])
     print("✅ /etc/xrdp/startwm.sh обновлён")
+def setup_keyboard_layout(username, home_dir):
+    """Настройка раскладки: русский/английский через Left Shift + Left Alt"""
+    print("⌨️  Настраиваем переключение раскладки (рус/англ)...")
 
+    # Путь к конфигу XFCE
+    xfconf_dir = f"{home_dir}/.config/xfce4/xfconf/xfce-perchannel-xml"
+    os.makedirs(xfconf_dir, exist_ok=True)
+    keyboard_file = f"{xfconf_dir}/keyboard-layout.xml"
+
+    # XML-конфиг для xfconf
+    keyboard_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+            <channel name="keyboard-layout" version="1.0">
+              <property name="Default" type="empty">
+                <property name="XkbDisable" type="bool" value="false"/>
+                <property name="XkbLayout" type="string" value="us,ru"/>
+                <property name="XkbVariant" type="string" value=",winkeys"/>
+                <property name="XkbOptions" type="string" value="grp:lalt_lshift_toggle,grp_led:scroll"/>
+              </property>
+            </channel>
+            '''
+    # Сохраняем файл
+    Path(keyboard_file).write_text(keyboard_xml, encoding='utf-8')
+    run(["chown", "-R", f"{username}:{username}", f"{home_dir}/.config"])
+
+    # Добавляем в автозагрузку (на случай, если xfconf не примет XML)
+    autostart_dir = f"{home_dir}/.config/autostart"
+    os.makedirs(autostart_dir, exist_ok=True)
+    kbd_desktop = f"{autostart_dir}/set-keyboard.desktop"
+
+    autostart_entry = '''[Desktop Entry]
+            Type=Application
+            Name=Set Keyboard Layout
+            Exec=setxkbmap -layout "us,ru" -variant ",winkeys" -option "grp:lalt_lshift_toggle,grp_led:scroll"
+            Hidden=false
+            NoDisplay=true
+            X-GNOME-Autostart-enabled=true
+            '''
+    Path(kbd_desktop).write_text(autostart_entry, encoding='utf-8')
+    run(["chmod", "+x", kbd_desktop])
+    run(["chown", "-R", f"{username}:{username}", autostart_dir])
+
+    print("✅ Раскладка настроена: Shift+Alt — переключение между us/ru")
 def fix_user_session(username, home_dir):
     """Создаём .xsession и .xprofile"""
     print(f"📁 Настраиваем сессию для {username}...")
@@ -204,6 +245,7 @@ def main():
 
     # Выполняем настройку
     fix_wsl_conf(username)
+    setup_keyboard_layout(username, home_dir)
     install_gui(username)
     install_tools()
 
