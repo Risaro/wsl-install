@@ -245,6 +245,16 @@ def main():
 
     # Выполняем настройку
     fix_wsl_conf(username)
+    # --- Получаем домашнюю директорию пользователя ---
+    result = run(["getent", "passwd", username], check=False)
+    if result.returncode != 0:
+        print(f"🛑 Не удалось получить информацию о пользователе '{username}'")
+        sys.exit(1)
+    # Парсим строку passwd: user:x:1000:1000:,,,:/home/user:/bin/bash
+    home_dir = result.stdout.strip().split(':')[5]
+
+    # Теперь можно вызывать функции, требующие home_dir
+    fix_user_session(username, home_dir)
     setup_keyboard_layout(username, home_dir)
     install_gui(username)
     install_tools()
