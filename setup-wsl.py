@@ -3,18 +3,11 @@
 import os
 import sys
 import subprocess
-import re
 import getpass
 from pathlib import Path
 
-def run(cmd, sudo=True, check=True):
-    """
-    Выполняет команду через subprocess.run.
-    :param cmd: список или строка команды
-    :param sudo: добавить sudo
-    :param check: вызывать исключение при ошибке
-    :return: результат выполнения
-    """
+def run(cmd, sudo=True, check=True, shell=False):
+    """Универсальный запуск команды"""
     if sudo:
         if isinstance(cmd, str):
             full_cmd = f"sudo {cmd}"
@@ -28,7 +21,7 @@ def run(cmd, sudo=True, check=True):
     try:
         result = subprocess.run(
             full_cmd,
-            shell=isinstance(full_cmd, str),
+            shell=shell,
             check=check,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -47,32 +40,31 @@ def run(cmd, sudo=True, check=True):
         if e.stderr:
             print(f"   Ошибка: {e.stderr.strip()}")
         if not check:
-            return e  # Вернуть объект для обработки
+            return e
         sys.exit(1)
     except Exception as e:
         print(f"❌ Неизвестная ошибка: {e}")
         sys.exit(1)
 
 def detect_gpu():
-    """Определяем тип GPU через lspci"""
+    """Определяем тип GPU"""
     print("🔍 Определяем тип GPU...")
     result = run(["lspci", "-v"], check=False)
     if result.returncode != 0:
         print("⚠️ Не удалось выполнить lspci. Устанавливаем CPU OpenCL...")
         return "unknown"
-
     output = result.stdout.lower()
     if "nvidia" in output:
         return "nvidia"
-    elif "amd" in output or "radeon" in output or "advanced micro devices" in output:
+    elif "amd" in output or "radeon" in output:
         return "amd"
     elif "intel" in output:
         return "intel"
     else:
         return "unknown"
 
-def setup_wsl_conf(username):
-    """Настройка /etc/wsl.conf"""
+def fix_wsl_conf(username):
+    """Настройка /etc/wsl.conf с автозапуском dbus и xrdp"""
     print("⚙️ Настраиваем /etc/wsl.conf...")
     wsl_conf = f'''[automount]
 enabled=true
@@ -81,28 +73,70 @@ enabled=true
 default={username}
 
 [boot]
-command = "service dbus start"
+command = "sudo service dbus start; sudo service xrdp start"
 '''
     conf_path = "/tmp/wsl.conf"
     Path(conf_path).write_text(wsl_conf, encoding='utf-8')
     run(["cp", conf_path, "/etc/wsl.conf"])
-    print("✅ /etc/wsl.conf настроен")
+    print("✅ /etc/wsl.conf настроен (автозапуск dbus и xrdp)")
+
+def fix_xrdp_config(username):
+    """Исправляем startwm.sh для xRDP"""
+    print("🔧 Исправляем /etc/xrdp/startwm.sh...")
+    startwm_content = '''#!/bin/sh
+if [ -r /etc/X11/xinit/xinitrc ]; then
+  . /etc/X11/xinit/xinitrc
+else
+  startxfce4 &
+fi
+'''
+    startwm_path = "/tmp/startwm.sh"
+    Path(startwm_path).write_text(startwm_content, encoding='utf-8')
+    run(["cp", startwm_path, "/etc/xrdp/startwm.sh"])
+    run(["chmod", "+x", "/etc/xrdp/startwm.sh"])
+    print("✅ /etc/xrdp/startwm.sh обновлён")
+
+def fix_user_session(username, home_dir):
+    """Создаём .xsession и .xprofile"""
+    print(f"📁 Настраиваем сессию для {username}...")
+
+    # .xsession
+    xsession = f"{home_dir}/.xsession"
+    Path(xsession).write_text("startxfce4\n", encoding='utf-8')
+    run(["chown", f"{username}:{username}", xsession])
+    run(["chmod", "+x", xsession])
+
+    # .xprofile — отключаем WSLg
+    xprofile = f"{home_dir}/.xprofile"
+    xprofile_content = '''unset DISPLAY
+unset WAYLAND_DISPLAY
+unset XDG_SESSION_TYPE
+'''
+    Path(xprofile).write_text(xprofile_content, encoding='utf-8')
+    run(["chown", f"{username}:{username}", xprofile])
+
+    print("✅ .xsession и .xprofile настроены")
 
 def install_gui(username):
     """Установка XFCE и xRDP"""
     print("🎨 Устанавливаем XFCE и xRDP...")
     run(["apt", "update", "-qq"])
-    run(["apt", "install", "-y", "xfce4", "xfce4-goodies", "xrdp", "dbus-x11"])
+    run(["apt", "install", "-y", "xfce4", "xfce4-goodies", "xrdp", "dbus-x11", "xorg"])
 
-    # Настройка .xsession
-    session_file = f"/home/{username}/.xsession"
-    run(["sh", "-c", f"echo 'xfce4-session' > {session_file}"])
-    run(["chown", f"{username}:{username}", session_file])
+    # Права для xrdp
+    run(["adduser", "xrdp", "ssl-cert"])
 
-    # Запуск xRDP
-    run(["service", "xrdp", "start"])
+    # Настройка сессии
+    uid = getpass.getuid()
+    home_dir = f"/home/{username}"
+
+    fix_user_session(username, home_dir)
+    fix_xrdp_config(username)
+
+    # Включаем автозапуск xrdp
     run(["systemctl", "enable", "xrdp"], check=False)
-    print("✅ GUI установлен")
+
+    print("✅ GUI и xRDP установлены и настроены")
 
 def install_tools():
     """Установка базовых инструментов"""
@@ -128,11 +162,7 @@ def install_amd():
     """Установка ROCm"""
     print("📦 Устанавливаем ROCm для AMD...")
     run(["apt", "install", "-y", "wget", "gnupg2"])
-    run(["wget", "-q", "-O", "-", "https://repo.radeon.com/rocm/rocm.gpg.key"], stdout=subprocess.PIPE)
-    result = subprocess.run(
-        ["wget", "-q", "-O", "-", "https://repo.radeon.com/rocm/rocm.gpg.key"],
-        capture_output=True, text=True
-    )
+    result = run(["wget", "-q", "-O", "-", "https://repo.radeon.com/rocm/rocm.gpg.key"], stdout=subprocess.PIPE)
     run(["apt-key", "add", "-"], input=result.stdout)
     run(["sh", "-c", "echo 'deb [arch=amd64] https://repo.radeon.com/rocm/apt/5.7 jammy main' > /etc/apt/sources.list.d/rocm.list"])
     run(["apt", "update"])
@@ -165,15 +195,15 @@ def main():
     username = sys.argv[1]
     print(f"🔐 Настройка WSL для пользователя: {username}")
 
-    # Проверка существования пользователя
+    # Проверка пользователя
     result = run(["id", "-u", username], check=False)
     if result.returncode != 0:
         print(f"🛑 Пользователь '{username}' не существует!")
         sys.exit(1)
     print(f"✅ Пользователь '{username}' существует (UID: {result.stdout.strip()})")
 
-    # Выполнение настройки
-    setup_wsl_conf(username)
+    # Выполняем настройку
+    fix_wsl_conf(username)
     install_gui(username)
     install_tools()
 
@@ -191,6 +221,7 @@ def main():
 
     # Финал
     ip = run(["hostname", "-I"], check=False).stdout.strip().split()[0]
+
     print("\n" + "="*60)
     print("✅ УСТАНОВКА WSL ЗАВЕРШЕНА!")
     print(f"🖥️  Пользователь: {username}")
@@ -199,6 +230,7 @@ def main():
     print("💡 Подключайтесь через Remote Desktop к:")
     print(f"   {ip}:3389")
     print("   Логин: имя и пароль от WSL")
+    print("   При подключении выберите 'Xorg' в поле 'Модуль подключения'")
     print("="*60)
 
 if __name__ == "__main__":
