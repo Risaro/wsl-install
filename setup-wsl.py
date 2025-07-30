@@ -143,7 +143,7 @@ def install_tools():
     print("🛠️ Устанавливаем htop, nano, git, curl...")
     run(["apt", "install", "-y",
          "htop", "nano", "wget", "curl", "git",
-         "software-properties-common", "gnupg2"])
+         "software-properties-common", "gnupg2", "net-tools"])
     print("✅ Инструменты установлены")
 
 def install_nvidia():
