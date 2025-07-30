@@ -167,12 +167,8 @@ def install_gui(username):
     # Права для xrdp
     run(["adduser", "xrdp", "ssl-cert"])
 
-    # Настройка сессии
-    uid = getpass.getuid()
-    home_dir = f"/home/{username}"
-
-    fix_user_session(username, home_dir)
-    fix_xrdp_config(username)
+    # fix_user_session и setup_keyboard_layout вызываются в main()
+    # где home_dir уже определён
 
     # Включаем автозапуск xrdp
     run(["systemctl", "enable", "xrdp"], check=False)
