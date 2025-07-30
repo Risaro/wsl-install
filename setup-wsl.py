@@ -190,7 +190,7 @@ def main():
         install_cpu_opencl()
 
     # Финал
-    ip = run(["hostname", "-I"], shell=True).stdout.strip().split()[0]
+    ip = run(["hostname", "-I"], check=False).stdout.strip().split()[0]
     print("\n" + "="*60)
     print("✅ УСТАНОВКА WSL ЗАВЕРШЕНА!")
     print(f"🖥️  Пользователь: {username}")
