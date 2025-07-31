@@ -31,7 +31,7 @@ if not exist "setup-wsl.ps1" (
 
 :: Запускаем PowerShell-скрипт
 echo 🚀 Запуск setup-wsl.ps1...
-powershell -ExecutionPolicy Bypass -NoProfile -File "setup-wsl.ps1"
+%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\powershell.exe  -ExecutionPolicy Bypass -NoProfile -File "setup-wsl.ps1"
 
 echo.
 echo 🎉 Установка завершена. Нажмите любую клавишу...
