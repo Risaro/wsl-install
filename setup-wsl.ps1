@@ -3,7 +3,15 @@
 # УСТАНОВКА WSL С GUI, GPU, ПАРОЛЯМИ И АВТОВОЗОБНОВЛЕНИЕМ
 # С РУЧНЫМ ВВОДОМ ПОЛЬЗОВАТЕЛЯ ПОСЛЕ ИНИЦИАЛИЗАЦИИ
 # =============================================
-
+# ---------------------------------------------------
+# 0. ГАРАНТИРУЕМ ДОСТУП К СИСТЕМНЫМ КОМАНДАМ
+# ---------------------------------------------------
+$system32 = "C:\Windows\System32"
+Write-Host "🔧 Провека , что присутвует  $system32 в PATH..." -ForegroundColor Yellow
+if ($env:PATH -notlike "*$system32*") {
+    Write-Host "🔧 Добавляем $system32 в PATH..." -ForegroundColor Yellow
+    $env:PATH = "$system32;$env:PATH"
+}
 $setupStageKey = "HKCU:\Software\WSL-Setup"
 $setupStageValue = "CurrentStage"
 $distroName = $null
@@ -35,6 +43,7 @@ function Clear-SetupStage {
         Remove-Item -Path $setupStageKey -Recurse -Force
     }
 }
+
 
 # Получаем текущий этап
 $stage = Get-SetupStage
