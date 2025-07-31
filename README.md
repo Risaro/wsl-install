@@ -7,6 +7,10 @@
 
 ---
 [[Скачать АРХИВ](https://github.com/Risaro/wsl-install/archive/refs/heads/main.zip)]
+
+--Видео гайды
+[[Гайд 1 установка WSL ](https://drive.google.com/file/d/10c_jxuMTDH-lnpVmFV6ofhFhWQRJCuN4/view?usp=sharing)]
+[[Гайд 2 установка Шредиренгера ](https://drive.google.com/file/d/1PkNtU2ztHGsWz_igu5HYqzpsUYSk0xIw/view?usp=sharing)]
 ## ✅ Что делает скрипт
 
 - 🔧 Включает WSL и устанавливает WSL2 как версию по умолчанию
