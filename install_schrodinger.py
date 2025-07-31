@@ -93,6 +93,7 @@ def create_windows_shortcut(schrod_dir, wsl_user):
 
     # Команда для .bat файла
     bat_content = f'''@echo off
+    chcp 65001 >nul
 echo Запускаем Maestro...
 wsl -d "{distro_name}" -u {wsl_user} -e bash -c "export SCHRODINGER={schrod_dir}; $SCHRODINGER/maestro"
 if %errorlevel% neq 0 (
