@@ -44,7 +44,7 @@ function Clear-SetupStage {
     }
 }
 
-
+Clear-SetupStage
 # Получаем текущий этап
 $stage = Get-SetupStage
 Write-Host "🔄 Этап установки: $stage" -ForegroundColor Cyan
