@@ -225,18 +225,22 @@ def main():
     else:
         log("✅ Установка Schrödinger завершена успешно")
 
-    # --- 11. Копируем папки licenses и internal
-    source_internal = current_dir / "internal"
-    source_licenses = current_dir / "licenses"
-    target_internal = schrod_dir / "internal"
-    target_licenses = schrod_dir / "licenses"
+       # --- 11. Копируем libmmfileshared.so ---
+    source_so = current_dir / "internal" / "lib" / "libmmfileshared.so"
+    target_lib = schrod_dir / "internal" / "lib"
+    target_so = target_lib / "libmmfileshared.so"
 
-    if source_internal.exists():
-        log(f"🔁 Копируем internal в {target_internal}...")
-        if target_internal.exists():
-            shutil.rmtree(target_internal)
-        shutil.copytree(source_internal, target_internal)
-        log("✅ Папка internal скопирована")
+    if source_so.exists():
+        log(f"🔁 Копируем {source_so.name} в {target_so}...")
+        target_lib.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_so, target_so)
+        log("✅ libmmfileshared.so скопирован")
+    else:
+        log("⚠️  Файл libmmfileshared.so не найден в исходной папке internal")
+
+    # --- 12. Копируем licenses (если нужно) ---
+    source_licenses = current_dir / "licenses"
+    target_licenses = schrod_dir / "licenses"
 
     if source_licenses.exists():
         log(f"🔁 Копируем licenses в {target_licenses}...")
