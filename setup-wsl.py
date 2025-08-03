@@ -186,12 +186,10 @@ def install_tools():
 def install_nvidia():
     """Установка CUDA для WSL"""
     print("📦 Устанавливаем CUDA для NVIDIA...")
-    run(["wget", "-q", "https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin"])
-    run(["mv", "cuda-wsl-ubuntu.pin", "/etc/apt/sources.list.d/cuda-pin.list"])
     run(["apt-key", "adv", "--fetch-keys", "https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/3bf863cc.pub"])
     run(["add-apt-repository", "deb https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/ /", "-y"])
     run(["apt", "update"])
-    run(["apt", "install", "-y", "cuda-toolkit-12-4"])
+    run(["apt", "install", "-y", "cuda-toolkit"])
     run(["nvidia-smi"])
     print("✅ CUDA установлен")
 
