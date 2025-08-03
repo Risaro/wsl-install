@@ -82,20 +82,13 @@ def create_windows_shortcut(schrod_dir, wsl_user):
     script_dir = Path.cwd()
     shortcut_path = script_dir / "Запустить Maestro.bat"
 
-    # Определяем дистрибутив
-    result = run(["wsl", "--list", "--quiet"], check=False)
-    distros = [d.strip() for d in result.stdout.strip().splitlines() if d.strip()]
-    distro_name = "Ubuntu"
-    for d in distros:
-        if "Ubuntu" in d:
-            distro_name = d
-            break
+   
 
     # Команда для .bat файла
     bat_content = f'''@echo off
     chcp 65001 >nul
 echo Запускаем Maestro...
-wsl -d "{distro_name}" -u {wsl_user} -e bash -c "export SCHRODINGER={schrod_dir}; $SCHRODINGER/maestro"
+wsl -d Ubuntu -u {wsl_user} -e bash -c "export SCHRODINGER={schrod_dir}; $SCHRODINGER/maestro"
 if %errorlevel% neq 0 (
     echo.
     echo ОШИБКА: Не удалось запустить Maestro.
@@ -278,3 +271,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
