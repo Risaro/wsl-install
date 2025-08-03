@@ -6,7 +6,7 @@
 После запуска вы получаете полноценную Linux-среду с удалённым рабочим столом — как виртуальную машину, но без VirtualBox.
 
 ---
-[[Скачать АРХИВ]((https://github.com/Risaro/wsl-install/raw/refs/heads/main/WSLINSTALL.zip))]
+[[Скачать АРХИВ](https://github.com/Risaro/wsl-install/raw/refs/heads/main/WSLINSTALL.zip)]
 
 --Видео гайды
 [[Гайд 1 установка WSL ](https://drive.google.com/file/d/10c_jxuMTDH-lnpVmFV6ofhFhWQRJCuN4/view?usp=sharing)]
